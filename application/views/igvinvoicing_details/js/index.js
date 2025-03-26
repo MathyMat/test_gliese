@@ -203,7 +203,7 @@ function get_voucher_type() {
         }
     });
 }
-
+// hola como estas bien y tu bien genshin
 $(document).ready(function () {
     $('#create_income_details_form select[name="vt_description"]').on('change', function () {
         var selectedValue = $(this).val(); // ID del tipo de comprobante seleccionado
