@@ -77,7 +77,7 @@ function get_coins() {
     });
 }
 
-// Ejecutar la holafunción cuando se cargue la página
+// Ejecutar la función cuando se cargue la página
 $(document).ready(function () {
     get_coins();
 });
