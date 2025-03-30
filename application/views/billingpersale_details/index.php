@@ -2,7 +2,6 @@
 <div class="app-content content">
     <div class="content-overlay"></div>
     <div class="header-navbar-shadow"></div>
-   
     <div class="content-wrapper container-xxl p-0">
         <div class="content-header row">
         </div>
@@ -35,15 +34,16 @@
                                             <!-- Opciones para el select -->
                                         </select>
                                     </div>
-                                </div>
+                                </div><script src="../billingpersale_details/js/index.js"></script>
                                 <div class="col-md-2 col-lg-auto col-xl-1.5">
                                     <label class="form-label">Fecha Emisión (*)</label>
-                                    <input name="fecha_emision" type="date" class="form-control">
+                                    <input name="fecha_emision" type="date" class="form-control" id="fecha_emision">
                                 </div>
                                 <div class="col-md-2 col-lg-auto col-xl-1.5">
                                     <label class="form-label">Fecha Vencimiento (*)</label>
                                     <input name="fecha_vencimiento" type="date" class="form-control">
                                 </div>
+                                
                                 <div class="col-md-2 col-lg-1.5" style="width: 12.5%;">
                                     <label class="form-label">Moneda</label>
                                     <span name="coins" class="form-control"></span>
@@ -62,7 +62,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Dirección</label>
-                                    <input name="address_cli" type="text" class="form-control">
+                                    <input name="address_cli" type="text" class="form-control" readonly>
                                 </div>
                                 <div class="col-md-2">
                                     <div>
@@ -215,7 +215,6 @@
                         </div>
                     </div>
                 </div>
-                <script src="<?= base_url('application/views/igvinvoicing_details/js/index.js') ?>"></script>
                 <!-- End Create Income Products Modal -->
             </section>
             <!-- Permissions ends -->

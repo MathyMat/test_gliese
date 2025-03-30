@@ -464,10 +464,6 @@ $(document).ready(function () {
     modificarSubtotales();
 });
 
-// Obtener el código del producto
-$.post("../ajax/factura.php?op=selectcodigo", function (r) {
-    codigo_prod = parseInt(r.substring(1));
-});
 
 // Función para limpiar el formulario
 function limpiar() {
