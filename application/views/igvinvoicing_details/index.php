@@ -31,7 +31,7 @@
                     <div>
                         <label class="form-label">Cliente(*)</label>
                         <select name="business_name_cli" class="form-select select2" required>
-                            <!-- Opciones para el select -->
+
                         </select>
                     </div>
                 </div>

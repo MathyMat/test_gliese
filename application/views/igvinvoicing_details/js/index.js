@@ -683,93 +683,76 @@ function calcularTotales() {
 
 $("#create_income_details_form").on("submit", function(e) {
     e.preventDefault();
-    
-    // 1. Validar cliente seleccionado
+
+    // Validar cliente y calcular totales (tu código actual)
     var clientId = $("select[name='business_name_cli']").val();
     if (!clientId) {
         alert("Por favor seleccione un cliente");
         return false;
     }
-
-    // 2. Calcular totales
     calcularTotales();
 
-    // 3. Preparar FormData correctamente
-    var formData = new FormData();
-    
-    // Agregar campos individuales
-    formData.append("business_name_cli", clientId);
-    formData.append("fecha_emision", $("input[name='fecha_emision']").val());
-    formData.append("fecha_vencimiento", $("input[name='fecha_vencimiento']").val());
-    formData.append("coins", $("input[name='coins']").val());
-    formData.append("igv", $("input[name='igv']").val());
-    formData.append("igv_asig", $("input[name='igv_asig']").val());
-    formData.append("document_number_cli", $("input[name='document_number_cli']").val());
-    formData.append("address_cli", $("input[name='address_cli']").val());
-    formData.append("fp_description", $("select[name='fp_description']").val());
-    formData.append("vt_description", $("select[name='vt_description']").val());
-    formData.append("pt_description", $("select[name='pt_description']").val());
-    formData.append("id_user", clientId); // Usar el mismo ID que business_name_cli
-    formData.append("op_gravadas", $("input[name='op_gravadas']").val());
-    formData.append("igv_total", $("input[name='igv_total']").val());
-    formData.append("total_venta", $("input[name='total_venta']").val());
+    // Crear objeto con los datos (no FormData)
+    var data = {
+        business_name_cli: clientId,
+        fecha_emision: $("input[name='fecha_emision']").val(),
+        fecha_vencimiento: $("input[name='fecha_vencimiento']").val(),
+        coins: $("input[name='coins']").val(),
+        igv: $("input[name='igv']").val(),
+        igv_asig: $("input[name='igv_asig']").val(),
+        document_number_cli: $("input[name='document_number_cli']").val(),
+        address_cli: $("input[name='address_cli']").val(),
+        fp_description: $("select[name='fp_description']").val(),
+        vt_description: $("select[name='vt_description']").val(),
+        pt_description: $("select[name='pt_description']").val(),
+        id_user: clientId,
+        op_gravadas: $("input[name='op_gravadas']").val(),
+        igv_total: $("input[name='igv_total']").val(),
+        total_venta: $("input[name='total_venta']").val(),
+        product_code: $("input[name='product_code[]']").map(function() { return $(this).val(); }).get(),
+        product_description: $("input[name='product_description[]']").map(function() { return $(this).val(); }).get(),
+        unit_of_measure: $("input[name='unit_of_measure[]']").map(function() { return $(this).val(); }).get(),
+        sale_price: $("input[name='sale_price[]']").map(function() { return $(this).val(); }).get(),
+        quantity: $("input[name='quantity[]']").map(function() { return $(this).val(); }).get()
+    };
 
-    // Agregar productos correctamente
-    $(".filas").each(function(index) {
-        formData.append("product_code[]", $(this).find("input[name='product_code[]']").val());
-        formData.append("product_description[]", $(this).find("input[name='product_description[]']").val());
-        formData.append("unit_of_measure[]", $(this).find("input[name='unit_of_measure[]']").val());
-        formData.append("sale_price[]", parseFloat($(this).find("input[name='sale_price[]']").val()).toFixed(2));
-        formData.append("quantity[]", parseInt($(this).find("input[name='quantity[]']").val()));
+    // Enviar como JSON
+    $.ajax({
+        url: BASE_URL + "igvinvoicing_details/save_invoice", // Verifica la ruta
+        type: "POST",
+        data: JSON.stringify(data),
+        contentType: "application/json",
+        dataType: "json",
+        beforeSend: function() {
+            $("#btnGuardar").prop("disabled", true);
+        },
+        success: function(response) {
+            if (response && response.status === 'OK') {
+                alert("Éxito: " + (response.message || "Operación completada"));
+                console.log("Datos:", response.data);
+            } else {
+                alert("Error: " + (response?.message || "Respuesta inválida"));
+            }
+        },
+        error: function(xhr) {
+            let errorMsg = "Error: ";
+            try {
+                const jsonResponse = JSON.parse(xhr.responseText);
+                errorMsg += jsonResponse.message || xhr.statusText;
+            } catch (e) {
+                errorMsg += "Servidor devolvió: " + xhr.responseText.substring(0, 100);
+            }
+            console.error("Detalles:", { 
+                status: xhr.status, 
+                response: xhr.responseText 
+            });
+            alert(errorMsg);
+        },
+        complete: function() {
+            $("#btnGuardar").prop("disabled", false);
+        }
     });
-
-  // 4. Enviar datos
-  $.ajax({
-    url: BASE_URL + "C_Igvinvoicing_Details/save_invoice",
-    type: "POST",
-    data: formData,
-    contentType: false,
-    processData: false,
-    dataType: "text", // Cambiado a texto para manejar cualquier respuesta
-    beforeSend: function() {
-        $("#btnGuardar").prop("disabled", true);
-    },
-    success: function(response) {
-        try {
-            // Intenta parsear como JSON
-            var jsonResponse = JSON.parse(response);
-            
-            if (jsonResponse && jsonResponse.status === 'OK') {
-                alert("Factura guardada correctamente");
-                location.reload();
-            } else {
-                alert(jsonResponse.message || "Error al guardar la factura");
-            }
-        } catch (e) {
-            // Si no es JSON, muestra la respuesta directa
-            if (response.includes("Not found")) {
-                alert("Error: El servicio no fue encontrado. Verifique la URL.");
-            } else {
-                alert("Respuesta del servidor: " + response);
-            }
-        }
-    },
-    error: function(xhr, status, error) {
-        var errorMsg = "Error en la comunicación con el servidor: ";
-        if (xhr.status === 404) {
-            errorMsg += "Recurso no encontrado (404). Verifique la URL: " + BASE_URL + "C_Igvinvoicing_Details/save_invoice";
-        } else {
-            errorMsg += error + " - " + xhr.responseText;
-        }
-        alert(errorMsg);
-        console.error("Error completo:", {status: xhr.status, response: xhr.responseText, error: error});
-    },
-    complete: function() {
-        $("#btnGuardar").prop("disabled", false);
-    }
 });
-});
-
 // Función para formatear números con comas
 function addCommas(nStr) {
     nStr += "";
