@@ -367,34 +367,7 @@ $(document).ready(function () {
 
 // -- Events
 // --
-$(document).on('change', 'select[name="business_name_cli"]', function() {
-    // --
-    var selectedClients = $(this).val();
 
-    // --
-    $.ajax({
-        url: BASE_URL + 'Clients/get_client_by_id', // Cambia la URL según tu endpoint
-        type: 'GET',
-        data: { 'id_clients': selectedClients },
-        dataType: 'json',
-        contentType: false,
-        processData: true,
-        cache: false,
-        success: function(data) {
-            if (data.status === 'OK') {
-                var clientsData = data.data;
-
-                // Completa los campos con la información del destinatario
-                $('input[name="document_number_cli"]').val(clientsData.document_number);
-                $('input[name="address_cli"]').val(clientsData.address);
-
-                // Asigna el id del cliente a la variable idUser
-                idUser = clientsData.id;
-                console.log("id asignado:", idUser); // Depuración: Verifica el valor de idUser
-            }
-        }
-    });
-});
 
 // -- Variables globales (sin cambios)
 var cont = 0;
@@ -718,7 +691,7 @@ $("#create_income_details_form").on("submit", function(e) {
 
     // Enviar como JSON
     $.ajax({
-        url: BASE_URL + "igvinvoicing_details/save_invoice", // Verifica la ruta
+        url: BASE_URL + "Igvinvoicing_Details/save_invoice", // Verifica la ruta
         type: "POST",
         data: JSON.stringify(data),
         contentType: "application/json",

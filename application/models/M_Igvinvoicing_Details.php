@@ -5,7 +5,7 @@ class M_Igvinvoicing_Details extends Model {
         try {
             $this->pdo->beginTransaction();
 
-            // 1. Insertar cabecera (sin client_id)
+            // 1. Insertar cabecera (sin idUser)
             $invoice_id = $this->insert_header($header_data);
 
             // 2. Insertar detalles
@@ -31,9 +31,9 @@ class M_Igvinvoicing_Details extends Model {
             ];
         }
     }
-    private function client_exists($client_id) {
+    public function client_exists($idUser) {
         $stmt = $this->pdo->prepare("SELECT id FROM person WHERE id = ?");
-        $stmt->execute([$client_id]);
+        $stmt->execute([$idUser]);
         return (bool)$stmt->fetch();
     }
     
@@ -47,15 +47,15 @@ class M_Igvinvoicing_Details extends Model {
     }
     private function insert_header($data) {
         // 1. Validar cliente existente
-        $client_id = $data['business_name_cli'] ?? null;
-        if (!$this->client_exists($client_id)) {
-            throw new Exception("El cliente con ID $client_id no existe", 400);
+        $idUser = $data['business_name_cli'] ?? null;
+        if (!$this->client_exists($idUser)) {
+            throw new Exception("El cliente con ID $idUser no existe", 400);
         }
     
         // 2. Mapeo exacto a tu estructura de BD
         $insertData = [
             'user_id' => $data['user_id'] ?? 1,
-            'client_id' => $client_id['business_name_cli'] ?? 1,
+            'client_id' => $idUser ?? 1,
             'voucher_type_code' => $data['vt_description'] ?? '01',
             'series' => $data['series'] ?? 'F001',
             'correlative' => $data['correlative'] ?? '00000001',
@@ -67,11 +67,11 @@ class M_Igvinvoicing_Details extends Model {
             'taxable_operations' => $data['op_gravadas'] ?? 0,
             'total_igv' => $data['igv_total'] ?? 0,
             'total_sale' => $data['total_venta'] ?? 0,
-            'legend' => 'SON: '.$this->number_to_words($data['total_venta'] ?? 0).' SOLES',
+            'legend' => 'SON: ' . number_format($input['total_venta'] ?? 0, 2) . ' SOLES',
             'status' => 'PENDIENTE', // Valor fijo inicial
             'time' => date('H:i:s'),
             'assigned_igv' => $data['igv_asig'] ?? 1,
-            'type' => ($data['vt_description'] == 1) ? 'FACTURA' : 'BOLETA',
+
             'document_reason_id' => 1, // Valor por defecto
             'support' => 'ELECTRONICO',
             'related_document' => 0,
@@ -96,18 +96,27 @@ class M_Igvinvoicing_Details extends Model {
     private function insert_details($invoice_id, $details, $sale_date) {
         $sql = "INSERT INTO igvinvoice_detail (
             invoice_id, product_code, product_description, unit_of_measure,
-            quantity, sale_price, affectation, tax_percentage, sold_date
+            quantity, sale_price, affectation, sold_date
         ) VALUES (
             :invoice_id, :product_code, :product_description, :unit_of_measure,
-            :quantity, :sale_price, :affectation, :tax_percentage, :sold_date
+            :quantity, :sale_price, :affectation, :sold_date
         )";
         
         $stmt = $this->pdo->prepare($sql);
         
         foreach ($details as $detail) {
-            $detail['invoice_id'] = $invoice_id;
-            $detail['sold_date'] = $sale_date;
-            $stmt->execute($detail);
+            $data = [
+                'invoice_id' => $invoice_id,
+                'product_code' => $detail['product_code'] ?? 'SERV' . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                'product_description' => $detail['product_description'] ?? 'Servicio general',
+                'unit_of_measure' => $detail['unit_of_measure'] ?? 'NIU',
+                'quantity' => $detail['quantity'] ?? 1,
+                'sale_price' => $detail['sale_price'] ?? 0,
+                'affectation' => $detail['affectation'] ?? 'GRAVADA',
+                'sold_date' => $sale_date
+            ];
+            
+            $stmt->execute($data);
         }
     }
 
