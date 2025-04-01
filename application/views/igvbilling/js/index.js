@@ -20,7 +20,7 @@ function load_datatable() {
     let dataTable = $('#datatable-igvbilling').DataTable({
         // --
         ajax: {
-            url: BASE_URL + 'Igvinvoicing/get_igvinvoicing',
+            url: BASE_URL + 'igvbilling/get_igvbilling',
             cache: false,
         },
         columns: [

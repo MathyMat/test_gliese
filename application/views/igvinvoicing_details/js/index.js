@@ -362,7 +362,8 @@ function getFechaActual() {
 // Ejecutar después de cargar los tipos de comprobante
 $(document).ready(function () {
     get_voucher_type();
-    setTimeout(getFechaActual, 500); // Asegurar que el select ya está cargado antes de asignar eventos
+    setTimeout(getFechaActual, 500);
+     // Asegurar que el select ya está cargado antes de asignar eventos
 });
 
 // -- Events

@@ -32,10 +32,11 @@
                     <!-- Table -->
                     <div class="row">
                         <div class="col-12">
-                            <div class="card">
-                                <table class="table" id="datatable-igvinvoicing">
-                                    <thead>
-                                        <tr>
+                        <div class="card">
+    <div class="card-body">
+        <table id="datatable-igvinvoicing" class="table table-striped table-bordered" style="width:100%">
+            <thead>
+                <tr>
                                             <th>Fecha</th>
                                             <th>Cliente</th>
                                             <th>Usuario</th>
