@@ -20,7 +20,6 @@
           </div>
         </div>
         <!-- /Header table-->
-
         <!-- Container for adding products -->
         <div class="card">
           <div class="card-body">

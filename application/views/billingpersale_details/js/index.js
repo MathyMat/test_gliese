@@ -232,7 +232,8 @@ function get_voucher_type() {
         success: function (data) {
             // --
             if (data.status === "OK" && Array.isArray(data.data)) {
-                var html = '<option value="">Seleccionar</option>';
+                var html = '<option value="2">Boleta</option>';
+                html += '<option value="1">Factura</option>';
                 data.data.forEach((element) => {
                     if (element && (element.id === '1' || element.id === '2')) {
                         html += `<option value="${element.id}">${element.description}</option>`;
@@ -242,9 +243,21 @@ function get_voucher_type() {
                 $("#create_income_details_form :input[name=vt_description]").val('2');
             }
             validateDocumentAndVoucher();
+
+            // DESABILITAR FECHA DE VENCIMIENTO ----------------------------------------------------
+            $("#create_income_details_form :input[name=vt_description]").on("change", function () {
+                if ($(this).val() === "1") { 
+
+                    $("#create_income_details_form :input[name=fecha_vencimiento]").prop("readonly", true)
+                } else {
+
+                    $("#create_income_details_form :input[name=fecha_vencimiento]").prop("readonly", false);
+                }
+            });
         }
     });
 }
+
 
 
 function get_campus() {
@@ -286,24 +299,46 @@ function get_payment_method() {
         success: function (data) {
             // --
             if (data.status === "OK") {
-                // --
                 var html = '<option value="">Seleccionar</option>';
-                // --
                 data.data.forEach((element) => {
-                    html +=
-                        '<option value="' +
-                        element.id +
-                        '">' +
-                        element.description +
-                        "</option>";
+                    html += `<option value="${element.id}">${element.description}</option>`;
                 });
-                // -- Set values for select
                 $("#create_income_details_form :input[name=fp_description]").html(html);
                 $("#create_income_details_form :input[name=fp_description]").val(1);
             }
         },
     });
 }
+
+// FUNCION PARA DESHABILITAD FECHA DE VENCIMIENTO
+$(document).ready(function () {
+    // Función que se llama al cambiar cualquier valor
+    function toggleFechaVencimiento() {
+        var tipoVoucher = $("#create_income_details_form :input[name=vt_description]").val();
+        var metodoPago = $("#create_income_details_form :input[name=fp_description]").val();
+
+        // Verificar las condiciones para habilitar o deshabilitar el campo
+        if (metodoPago === "1") {  // Si el método de pago es "contado"
+            // Desactivar y limpiar el campo
+            $("#create_income_details_form :input[name=fecha_vencimiento]").prop("readonly", true).val("");
+        } else if ((tipoVoucher === "1" && metodoPago === "2") || tipoVoucher === "2" || (tipoVoucher === "1" && metodoPago === "1")) {
+            // Si las condiciones de tipo de voucher y método de pago cumplen, habilitar el campo
+            $("#create_income_details_form :input[name=fecha_vencimiento]").prop("readonly", false);
+        } else {
+            // Si no se cumple ninguna de las condiciones, desactivar y limpiar el campo
+            $("#create_income_details_form :input[name=fecha_vencimiento]").prop("readonly", true).val("");
+        }
+    }
+
+    // Ejecutar la función cuando el tipo de voucher o el método de pago cambian
+    $("#create_income_details_form :input[name=vt_description]").on("change", toggleFechaVencimiento);
+    $("#create_income_details_form :input[name=fp_description]").on("change", toggleFechaVencimiento);
+
+    // Llama a la función al cargar la página para asegurarse de que el estado inicial sea correcto
+    toggleFechaVencimiento();
+});
+
+//---------------------------------------------------------------------------------------------------
 
 // --
 function get_payment_type() {
@@ -640,6 +675,19 @@ document.addEventListener('DOMContentLoaded', function () {
             window.location.href = 'Billingpersale/index.php';
         });
     }
+});
+document.addEventListener("DOMContentLoaded", function () {
+    let inputFecha = document.getElementById("fecha_emision");
+    let hoy = new Date();
+    let tresDiasAntes = new Date();
+
+    tresDiasAntes.setDate(hoy.getDate() - 3);
+
+    let fechaMax = hoy.toISOString().split("T")[0]; 
+    let fechaMin = tresDiasAntes.toISOString().split("T")[0];
+
+    inputFecha.setAttribute("max", fechaMax);
+    inputFecha.setAttribute("min", fechaMin);
 });
 
 load_datatable_income_products();

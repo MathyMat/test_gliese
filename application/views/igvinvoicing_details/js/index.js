@@ -268,40 +268,63 @@ function get_payment_type() {
   });
 }
 
+$(document).on("change", 'select[name="fp_description"]', function () {
+  var selectedPaymentMethod = $(this).val();
+  var fechaVencimiento = $('input[name="fecha_vencimiento"]');
+  var fechaActual = new Date().toISOString().split("T")[0]; // Formato YYYY-MM-DD
+
+  if (selectedPaymentMethod === "1") {
+    // Suponiendo que "1" es Contado
+    // Bloquear y establecer fecha actual
+    fechaVencimiento.val(fechaActual);
+    fechaVencimiento.prop("readonly", true);
+    fechaVencimiento.css("background-color", "#e9ecef");
+  } else if (selectedPaymentMethod === "2") {
+    // Suponiendo que "2" es Crédito
+    // Habilitar y permitir selección
+    fechaVencimiento.prop("readonly", false);
+    fechaVencimiento.css("background-color", "");
+    // Establecer mínimo como fecha actual
+    fechaVencimiento.attr("min", fechaActual);
+  }
+});
+
+// Modificamos la función get_payment_method para asegurarnos de que los valores sean correctos
 function get_payment_method() {
-  // --
   $.ajax({
     url: BASE_URL + "Main/get_payment_method",
     type: "GET",
     dataType: "json",
-    contentType: false,
-    processData: false,
-    cache: false,
-    beforeSend: function () {
-      console.log("Cargando...");
-    },
     success: function (data) {
-      // --
       if (data.status === "OK") {
-        // --
         var html = '<option value="">Seleccionar</option>';
-        // --
         data.data.forEach((element) => {
-          html +=
-            '<option value="' +
-            element.id +
-            '">' +
-            element.description +
-            "</option>";
+          html += `<option value="${element.id}">${element.description}</option>`;
         });
-        // -- Set values for select
-        $("#create_income_details_form :input[name=fp_description]").html(html);
-        $("#create_income_details_form :input[name=fp_description]").val(1);
+        $('select[name="fp_description"]').html(html);
+
+        // Establecer Contado como valor predeterminado y disparar el evento change
+        $('select[name="fp_description"]').val("1").trigger("change");
       }
     },
   });
 }
+function getFechaActual() {
+  var fechaActual = new Date().toISOString().split("T")[0];
+  var inputFechaEmision = $('input[name="fecha_emision"]');
 
+  // Solo establecer fecha emisión si no está ya establecida
+  if (!inputFechaEmision.val()) {
+    inputFechaEmision.val(fechaActual);
+  }
+
+  // Establecer mínimo para fecha emisión (2 días antes como máximo)
+  var fechaMinEmision = new Date();
+  fechaMinEmision.setDate(fechaMinEmision.getDate() - 2);
+  inputFechaEmision.attr("min", fechaMinEmision.toISOString().split("T")[0]);
+
+  // No tocamos fecha vencimiento aquí, lo maneja el evento de forma de pago
+}
 // --
 function get_series() {
   // --
@@ -396,34 +419,6 @@ $(document).ready(function () {
 
 // -- Events
 // --
-$(document).on("change", 'select[name="business_name_cli"]', function () {
-  // --
-  var selectedClients = $(this).val();
-
-  // --
-  $.ajax({
-    url: BASE_URL + "Clients/get_client_by_id", // Cambia la URL según tu endpoint
-    type: "GET",
-    data: { id_clients: selectedClients },
-    dataType: "json",
-    contentType: false,
-    processData: true,
-    cache: false,
-    success: function (data) {
-      if (data.status === "OK") {
-        var clientsData = data.data;
-
-        // Completa los campos con la información del destinatario
-        $('input[name="document_number_cli"]').val(clientsData.document_number);
-        $('input[name="address_cli"]').val(clientsData.address);
-
-        // Asigna el id del cliente a la variable idUser
-        idUser = clientsData.id;
-        console.log("id asignado:", idUser); // Depuración: Verifica el valor de idUser
-      }
-    },
-  });
-});
 
 // -- Variables globales (sin cambios)
 var cont = 0;
@@ -444,7 +439,7 @@ $("#create_income_details_form").on("submit", function (e) {
   idUser = clientId; // Usamos directamente el valor del select como ID
 
   // Calcular los totales (sin cambios)
-  // calcularTotales();
+  calcularTotales();
 
   // Recopila los datos del formulario (sin cambios)
   var formData = new FormData($("#create_income_details_form")[0]);
@@ -489,11 +484,6 @@ $(document).ready(function () {
   getFechaActual();
   agregarDetalle();
   modificarSubtotales();
-});
-
-// Obtener el código del producto
-$.post("../ajax/factura.php?op=selectcodigo", function (r) {
-  codigo_prod = parseInt(r.substring(1));
 });
 
 // Función para limpiar el formulario
@@ -695,138 +685,114 @@ function eliminarDetalle(index) {
   evaluar();
 }
 
-// function calcularTotales() {
-//   let subtotal = 0;
-//   let igv = 0;
-//   let total = 0;
+function calcularTotales() {
+  let subtotal = 0;
+  let igv = 0;
+  let total = 0;
 
-//   // Recorre los productos para calcular el subtotal
-//   $(".filas").each(function () {
-//     let precio = parseFloat($(this).find("input[name='sale_price[]']").val());
-//     let cantidad = parseFloat($(this).find("input[name='quantity[]']").val());
-//     subtotal += precio * cantidad;
-//   });
+  // Recorre los productos para calcular el subtotal
+  $(".filas").each(function () {
+    let precio = parseFloat($(this).find("input[name='sale_price[]']").val());
+    let cantidad = parseFloat($(this).find("input[name='quantity[]']").val());
+    subtotal += precio * cantidad;
+  });
 
-//   // Calcula el IGV y el total
-//   igv = subtotal * 0.18; // Suponiendo un IGV del 18%
-//   total = subtotal;
+  // Calcula el IGV y el total
+  igv = subtotal * 0.18; // Suponiendo un IGV del 18%
+  total = subtotal;
 
-//   // Asigna los valores a los campos
-//   $("#op_gravadas").val(subtotal.toFixed(2));
-//   $("#igv_total").val(igv.toFixed(2));
-//   $("#total_venta").val(total.toFixed(2));
-// }
+  // Asigna los valores a los campos
+  $("#op_gravadas").val(subtotal.toFixed(2));
+  $("#igv_total").val(igv.toFixed(2));
+  $("#total_venta").val(total.toFixed(2));
+}
 
 $("#create_income_details_form").on("submit", function (e) {
   e.preventDefault();
 
-  // 1. Validar cliente seleccionado
+  // Validar cliente y calcular totales (tu código actual)
   var clientId = $("select[name='business_name_cli']").val();
   if (!clientId) {
     alert("Por favor seleccione un cliente");
     return false;
   }
+  calcularTotales();
 
-  // // 2. Calcular totales
-  // calcularTotales();
+  // Crear objeto con los datos (no FormData)
+  var data = {
+    business_name_cli: clientId,
+    fecha_emision: $("input[name='fecha_emision']").val(),
+    fecha_vencimiento: $("input[name='fecha_vencimiento']").val(),
+    coins: $("input[name='coins']").val(),
+    igv: $("input[name='igv']").val(),
+    igv_asig: $("input[name='igv_asig']").val(),
+    document_number_cli: $("input[name='document_number_cli']").val(),
+    address_cli: $("input[name='address_cli']").val(),
+    fp_description: $("select[name='fp_description']").val(),
+    vt_description: $("select[name='vt_description']").val(),
+    pt_description: $("select[name='pt_description']").val(),
+    id_user: clientId,
+    op_gravadas: $("input[name='op_gravadas']").val(),
+    igv_total: $("input[name='igv_total']").val(),
+    total_venta: $("input[name='total_venta']").val(),
+    product_code: $("input[name='product_code[]']")
+      .map(function () {
+        return $(this).val();
+      })
+      .get(),
+    product_description: $("input[name='product_description[]']")
+      .map(function () {
+        return $(this).val();
+      })
+      .get(),
+    unit_of_measure: $("input[name='unit_of_measure[]']")
+      .map(function () {
+        return $(this).val();
+      })
+      .get(),
+    sale_price: $("input[name='sale_price[]']")
+      .map(function () {
+        return $(this).val();
+      })
+      .get(),
+    quantity: $("input[name='quantity[]']")
+      .map(function () {
+        return $(this).val();
+      })
+      .get(),
+  };
 
-  // 3. Preparar FormData correctamente
-  var formData = new FormData();
-
-  // Agregar campos individuales
-  formData.append("business_name_cli", clientId);
-  formData.append("fecha_emision", $("input[name='fecha_emision']").val());
-  formData.append(
-    "fecha_vencimiento",
-    $("input[name='fecha_vencimiento']").val()
-  );
-  formData.append("coins", $("input[name='coins']").val());
-  formData.append("igv", $("input[name='igv']").val());
-  formData.append("igv_asig", $("input[name='igv_asig']").val());
-  formData.append(
-    "document_number_cli",
-    $("input[name='document_number_cli']").val()
-  );
-  formData.append("address_cli", $("input[name='address_cli']").val());
-  formData.append("fp_description", $("select[name='fp_description']").val());
-  formData.append("vt_description", $("select[name='vt_description']").val());
-  formData.append("pt_description", $("select[name='pt_description']").val());
-  formData.append("id_user", clientId); // Usar el mismo ID que business_name_cli
-  formData.append("op_gravadas", $("input[name='op_gravadas']").val());
-  formData.append("igv_total", $("input[name='igv_total']").val());
-  formData.append("total_venta", $("input[name='total_venta']").val());
-
-  // Agregar productos correctamente
-  $(".filas").each(function (index) {
-    formData.append(
-      "product_code[]",
-      $(this).find("input[name='product_code[]']").val()
-    );
-    formData.append(
-      "product_description[]",
-      $(this).find("input[name='product_description[]']").val()
-    );
-    formData.append(
-      "unit_of_measure[]",
-      $(this).find("input[name='unit_of_measure[]']").val()
-    );
-    formData.append(
-      "sale_price[]",
-      parseFloat($(this).find("input[name='sale_price[]']").val()).toFixed(2)
-    );
-    formData.append(
-      "quantity[]",
-      parseInt($(this).find("input[name='quantity[]']").val())
-    );
-  });
-
-  // 4. Enviar datos
+  // Enviar como JSON
   $.ajax({
-    url: BASE_URL + "C_Igvinvoicing_Details/save_invoice",
+    url: BASE_URL + "Igvinvoicing_Details/save_invoice", // Verifica la ruta
     type: "POST",
-    data: formData,
-    contentType: false,
-    processData: false,
-    dataType: "text", // Cambiado a texto para manejar cualquier respuesta
+    data: JSON.stringify(data),
+    contentType: "application/json",
+    dataType: "json",
     beforeSend: function () {
       $("#btnGuardar").prop("disabled", true);
     },
     success: function (response) {
-      try {
-        // Intenta parsear como JSON
-        var jsonResponse = JSON.parse(response);
-
-        if (jsonResponse && jsonResponse.status === "OK") {
-          alert("Factura guardada correctamente");
-          location.reload();
-        } else {
-          alert(jsonResponse.message || "Error al guardar la factura");
-        }
-      } catch (e) {
-        // Si no es JSON, muestra la respuesta directa
-        if (response.includes("Not found")) {
-          alert("Error: El servicio no fue encontrado. Verifique la URL.");
-        } else {
-          alert("Respuesta del servidor: " + response);
-        }
+      if (response && response.status === "OK") {
+        alert("Éxito: " + (response.message || "Operación completada"));
+        console.log("Datos:", response.data);
+      } else {
+        alert("Error: " + (response?.message || "Respuesta inválida"));
       }
     },
-    error: function (xhr, status, error) {
-      var errorMsg = "Error en la comunicación con el servidor: ";
-      if (xhr.status === 404) {
-        errorMsg +=
-          "Recurso no encontrado (404). Verifique la URL: " +
-          BASE_URL +
-          "C_Igvinvoicing_Details/save_invoice";
-      } else {
-        errorMsg += error + " - " + xhr.responseText;
+    error: function (xhr) {
+      let errorMsg = "Error: ";
+      try {
+        const jsonResponse = JSON.parse(xhr.responseText);
+        errorMsg += jsonResponse.message || xhr.statusText;
+      } catch (e) {
+        errorMsg += "Servidor devolvió: " + xhr.responseText.substring(0, 100);
       }
-      alert(errorMsg);
-      console.error("Error completo:", {
+      console.error("Detalles:", {
         status: xhr.status,
         response: xhr.responseText,
-        error: error,
       });
+      alert(errorMsg);
     },
     complete: function () {
       $("#btnGuardar").prop("disabled", false);
@@ -848,6 +814,7 @@ function addCommas(nStr) {
 }
 
 get_payment_type();
+disableData();
 get_business_name();
 get_voucher_type();
 get_series();
