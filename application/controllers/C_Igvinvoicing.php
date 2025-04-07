@@ -105,9 +105,7 @@ class C_Igvinvoicing extends Controller
         echo json_encode($json);
     }
 
-    public function get_igvinvoicing_report() {
-        // Asegurar que los datos necesarios existen
-        $reportData['result']['documento_client'] = $reportData['result']['documento_client'] ?? 'DNI';
+    public function get_igvinvoicing_report() 
     {
         try {
             $this->functions->validate_session($this->segment->get('isActive'));
@@ -127,8 +125,10 @@ class C_Igvinvoicing extends Controller
 
             $model = $this->load_model('Igvinvoicing');
 
+            // Obtener todos los datos necesarios
             $companyData = $model->get_company();
             $reportData = $model->get_igvinvoicing_report($id_igvinvoice);
+            $detailsData = $model->get_igvinvoicing_details($id_igvinvoice);
 
             if ($companyData['status'] !== 'OK' || empty($companyData['result'])) {
                 throw new Exception('No se pudo obtener la información de la compañía.');
@@ -138,16 +138,25 @@ class C_Igvinvoicing extends Controller
                 throw new Exception('No se encontró el reporte de factura IGV.');
             }
 
-            $rucE = $companyData['result']['ruc'] ?? '';
-            $regc = $reportData['result'];
-            $codigo_voucher = $regc['voucher_type'];
-            $serie = $regc['series'];
-            $correlativo = $regc['correlative'];
+            if ($detailsData['status'] !== 'OK' || empty($detailsData['result'])) {
+                throw new Exception('No se encontraron detalles para la factura IGV.');
+            }
 
+            // Preparar datos para la vista
+            $data = [
+                'companyData' => $companyData,
+                'reportData' => $reportData,
+                'detailsData' => $detailsData,
+                'useIntl' => extension_loaded('intl')
+            ];
+            if (!extension_loaded('gd') || !function_exists('imagecreate')) {
+                throw new Exception('La extensión GD para PHP no está instalada. Es necesaria para generar códigos QR.');
+            }
+    
             ob_start();
             switch ($tipo) {
                 case 1:
-                    include 'application/Reporte/Factura.php';
+                    include 'application/Reporte/factura-igv.php';
                     break;
                 case 2:
                     include 'application/Reporte/Ticket.php';
@@ -156,18 +165,33 @@ class C_Igvinvoicing extends Controller
                     throw new Exception('Tipo de reporte no válido');
             }
             $content = ob_get_clean();
-
+    
             $html2pdf = new Html2Pdf();
             $html2pdf->writeHTML($content);
-            $html2pdf->output("{$rucE}-0{$codigo_voucher}-{$serie}-{$correlativo}.pdf");
+            
+            $filename = sprintf(
+                "%s-%s-%s-%s.pdf",
+                $companyData['result']['ruc'],
+                $reportData['result']['voucher_type_code'],
+                $reportData['result']['series'],
+                $reportData['result']['correlative']
+            );
+            
+            $html2pdf->output($filename, 'D'); // 'D' para descarga forzada
+    
         } catch (Exception $e) {
+            error_log('Error en generación de factura: ' . $e->getMessage());
             header('Content-Type: application/json');
             http_response_code(400);
-            echo json_encode(['status' => 'ERROR', 'message' => $e->getMessage()]);
+            echo json_encode([
+                'status' => 'ERROR', 
+                'message' => $e->getMessage(),
+                'gd_installed' => extension_loaded('gd'),
+                'intl_installed' => extension_loaded('intl')
+            ]);
             exit;
         }
     }
-}
     public function emit_comprobante()
     {
         try {
@@ -297,7 +321,7 @@ class C_Igvinvoicing extends Controller
             $password = $response['result']['password'];
 
             ob_start();
-            include 'application/Reporte/FacturaIGV.php';
+            include 'application/Reporte/factura-igv.php';
             $content = ob_get_clean();
 
             $html2pdf = new Html2Pdf();

@@ -83,47 +83,58 @@ class C_Igvinvoicing_Details extends Controller {
             }
 
             // 6. Preparar datos para el encabezado
-            $header_data = [
-                'user_id' => $this->segment->get('id') ?? 1, // ID del usuario en sesión
-                'client_id' => $client_id,
-                'voucher_type_code' => $input['vt_description'],
-                'series' => $series_info['series'],
-                'correlative' => $series_info['correlative'],
-                'date_time' => $input['fecha_emision'],
-                'due_date' => $input['fecha_vencimiento'] ?? $input['fecha_emision'],
-                'currency' => 'PEN',
-                'payment_type_code' => $input['fp_description'] ?? 'CONTADO',
-                'payment_method' => $input['pt_description'] ?? 'EFECTIVO',
-                'tax' => $input['igv'] ?? 18.00,
-                'taxable_operations' => $input['op_gravadas'] ?? 0,
-                'total_igv' => $input['igv_total'] ?? 0,
-                'total_sale' => $input['total_venta'] ?? 0,
-                'legend' => 'SON: ' . number_format($input['total_venta'] ?? 0, 2) . ' SOLES',
-                'status' => 'PENDIENTE',
-                'time' => date('H:i:s'),
-                'assigned_igv' => $input['igv_asig'] ?? 1,
-                'type' => ($input['vt_description'] ),
-                'document_number_cli' => $input['document_number_cli'] ?? '',
-                'address_cli' => $input['address_cli'] ?? '',
-                'business_name_cli' => $input['business_name_cli'] // Asegurando que esté presente
-            ];
+            // 1. Preparamos los detalles y obtenemos el sale_price del primer producto
+$details = [];
+$first_sale_price = 0; // Valor por defecto si no hay detalles
 
-            // 7. Preparar detalles de productos
-            $details = [];
-            if (!empty($input['product_code']) && is_array($input['product_code'])) {
-                foreach ($input['product_code'] as $key => $value) {
-                    $details[] = [
-                        'product_code' => $input['product_code'][$key] ?? 'SERV' . str_pad($key + 1, 4, '0', STR_PAD_LEFT),
-                        'product_description' => $input['product_description'][$key] ?? 'Servicio ' . ($key + 1),
-                        'unit_of_measure' => $input['unit_of_measure'][$key] ?? 'NIU',
-                        'quantity' => $input['quantity'][$key] ?? 1,
-                        'sale_price' => $input['sale_price'][$key] ?? 0,
-                        'affectation' => 'GRAVADA',
-                        'tax_percentage' => $input['igv_asig'] ?? 18
-                    ];
-                }
-            }
+if (!empty($input['product_code']) && is_array($input['product_code'])) {
+    foreach ($input['product_code'] as $key => $value) {
+        $sale_price = $input['sale_price'][$key] ?? 0;
+        $quantity = $input['quantity'][$key] ?? 1;
+        
+        // Guardamos el primer sale_price para la cabecera (índice 0)
+        if ($key == 0) {
+            $first_sale_price = $sale_price;
+        }
+        
+        // Construimos el array de detalles
+        $details[] = [
+            'product_code' => $input['product_code'][$key] ?? 'SERV' . str_pad($key + 1, 4, '0', STR_PAD_LEFT),
+            'product_description' => $input['product_description'][$key] ?? 'Servicio ' . ($key + 1),
+            'unit_of_measure' => $input['unit_of_measure'][$key] ?? 'NIU',
+            'quantity' => $quantity,
+            'sale_price' => $sale_price,
+            'affectation' => 'GRAVADA',
+            'tax_percentage' => $input['igv_asig'] ?? 18
+        ];
+    }
+}
 
+// 2. Construimos la cabecera con el primer sale_price como total_sale
+$header_data = [
+    'user_id' => $this->segment->get('id') ?? 1,
+    'client_id' => $client_id,
+    'voucher_type_code' => $input['vt_description'],
+    'series' => $series_info['series'],
+    'correlative' => $series_info['correlative'],
+    'date_time' => $input['fecha_emision'],
+    'due_date' => $input['fecha_vencimiento'] ?? $input['fecha_emision'],
+    'currency' => 'PEN',
+    'payment_type_code' => $input['fp_description'] ?? 'CONTADO',
+    'payment_method' => $input['pt_description'] ?? 'EFECTIVO',
+    'tax' => $input['igv'] ?? 18.00,
+    'taxable_operations' => $input['op_gravadas'] ?? 0,
+    'total_igv' => $input['igv_total'] ?? 0,
+    'total_sale' => $first_sale_price, // Usamos el sale_price del primer detalle
+    'legend' => 'SON: ' . number_format($first_sale_price, 2) . ' SOLES', // Leyenda actualizada
+    'status' => 'PENDIENTE',
+    'time' => date('H:i:s'),
+    'assigned_igv' => $input['igv_asig'] ?? 1,
+    'type' => ($input['vt_description']),
+    'document_number_cli' => $input['document_number_cli'] ?? '',
+    'address_cli' => $input['address_cli'] ?? '',
+    'business_name_cli' => $input['business_name_cli']
+];
             // 8. Crear factura usando el modelo
             $result = $this->model->create_invoice($header_data, $details);
 
@@ -141,7 +152,7 @@ class C_Igvinvoicing_Details extends Controller {
                 'data' => [
                     'invoice_id' => $result['data']['invoice_id'],
                     'correlative' => $series_info['series'] . '-' . $series_info['correlative'],
-                    'total' => number_format($header_data['total_sale'], 2)
+                    
                 ]
             ]);
 

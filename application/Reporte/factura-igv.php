@@ -1,8 +1,7 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="es">
 <head>
-    <title>Reporte de Billing Persale</title>
+    <title>Reporte de Factura IGV</title>
     <style type="text/css">
         table {
             color: black;
@@ -19,7 +18,6 @@
             padding-left: 20px;
             padding-right: 20px;
             font-size: 15px;
-            /*padding-bottom: : 10px;*/
             text-align: justify-all;
             line-height: 120%;
             margin-top: -2px;
@@ -89,7 +87,6 @@
             padding-right: 15px;
             font-size: 10px;
             margin-top: -10px;
-
         }
 
         .cuadro-cliente {
@@ -109,7 +106,6 @@
             border-width: thin;
             margin-top: -10px;
             width: 98%;
-
         }
 
         .contenido {
@@ -135,9 +131,7 @@
         }
 
         .cuadro-contenido {
-
             margin-left: 0px;
-            /*padding-bottom: -3px;*/
             padding-top: 0px;
             float: left;
         }
@@ -147,29 +141,23 @@
             width: 98%;
             margin-left: 0px;
             padding-top: 0px;
-
         }
 
         .borde-contenido_1 {
             height: 600px;
             width: 98%;
             padding-left: 3px;
-
         }
 
         .cuadro {
-            /* tabla columna */
             border-collapse: separate;
             margin-top: 0px;
             width: 98%;
             margin-left: 0px;
             padding-top: -581px;
-
-            /* tabla fila */
         }
 
         .articulo {
-            /* tabla fila */
             border-collapse: separate;
             padding-left: 0px;
             padding-right: 0px;
@@ -235,90 +223,113 @@
 
         .clouds {
             background: #ecf0f1;
-
             padding: 3px 4px 3px;
         }
 
         .boder {
-
             border-collapse: collapse;
             border-color: #087DA2;
         }
     </style>
 </head>
-
 <body>
     <?php
-    // Company data is already fetched in the controller, so we can use it directly
-    if (isset($companyData) && $companyData['status'] === 'OK' && !empty($companyData['result'])) {
-        $regc = $companyData['result'];
-        $empresa = $regc['business_name'] ?? '';
-        $rucE = $regc['ruc'] ?? '';
-        $direccion = $regc['address'] ?? '';
-        $direccion2 = $regc['address2'] ?? '';
-        $distrito = $regc['district'] ?? '';
-        $provincia = $regc['province'] ?? '';
-        $departamento = $regc['department'] ?? '';
-        $fecha_inicio = $regc['start_date'] ?? '';
-        $telefono = $regc['phone'] ?? '';
-        $correo = $regc['email'] ?? '';
-        $rubro = $regc['industry'] ?? '';
-        $web = $regc['web'] ?? '';
-        $logo = $regc['logo'] ?? '';
-    } else {
+    // Verificar datos de la compañía
+    if (!isset($companyData) || $companyData['status'] !== 'OK' || empty($companyData['result'])) {
         throw new Exception("Error: No se encontraron datos de la compañía.");
     }
+    $company = $companyData['result'];
+    $empresa = $company['business_name'] ?? '';
+    $nombre_comercial = $company['company_name'] ?? $empresa;
+    $rucE = $company['ruc'] ?? '';
+    $direccion = $company['address'] ?? '';
+    $direccion2 = $company['address2'] ?? '';
+    $distrito = $company['district'] ?? '';
+    $provincia = $company['province'] ?? '';
+    $departamento = $company['department'] ?? '';
+    $codigo_postal = $company['postal_code'] ?? '';
+    $telefono = $company['phone'] ?? '';
+    $correo = $company['email'] ?? '';
+    $web = $company['web'] ?? '';
+    $logo = $company['logo'] ?? '';
+    $pais = $company['country'] ?? 'Perú';
+    $fecha_inicio = $company['start_date'] ?? '';
+    $rubro = $company['industry'] ?? '';
+    $ubigeo = $company['ubigeo'] ?? '';
 
-    // Billing data is already fetched in the controller, so we can use it directly
-    if (isset($reportData) && $reportData['status'] === 'OK' && !empty($reportData['result'])) {
-        $regc = $reportData['result'];
-        $nombre_user = $regc['name_user'] ?? '';
-        $codeVoucher = $regc['code'] ?? '';
-        $tipo_voucher = ($regc['voucher_type'] == '1') ? 'FACTURA ELECTRÓNICA' : 'BOLETA ELECTRÓNICA';
-        $Docmuent_client = $regc['documento_client'] ?? '';
-        $tipo_documento_cliente = ($regc['documento_client'] == 'DNI') ? '1' : '6';
-        $cliente = $regc['clients'] ?? '';
-        $igv_asig = $regc['igv'] ?? 0;
-        $direccioncliente = $regc['address_cliente'] ?? '';
-        $rucC = $regc['document_number'] ?? '';
-        $serie = $regc['series'] ?? '';
-        $correlativo = $regc['correlative'] ?? '';
-        $moneda = $regc['DescCurrency'] ?? '';
-        $fecha = $regc['issue_date'] ?? '';
-        $fecha_ven = $regc['due_date'] ?? '';
-        $total_venta = $regc['total_amount'] ?? 0;
-        $op_gravadas = $regc['taxable_operations'] ?? 0;
-        $op_gratuitas = $regc['free_operations'] ?? 0;
-        $op_exoneradas = $regc['exempt_operations'] ?? 0;
-        $op_inafectas = $regc['unaffected_operations'] ?? 0;
-        $codigotipo_pago = $regc['payment_medium'] ?? '';
-        $leyenda = $regc['leyend'] ?? '';
-
-        // Fetch billing details
-        $billingModel = new M_Billingpersale();
-        $rspta_detalle = $billingModel->get_billingpersale_details_Report($id_billingpersale);
-        if ($rspta_detalle['status'] !== 'OK') {
-            throw new Exception("Error: No se encontraron detalles para el ID proporcionado.");
-        }
-        $detalles = $rspta_detalle['result'];
-        $item = 0;
-    } else {
+    // Verificar datos de la factura
+    if (!isset($reportData) || $reportData['status'] !== 'OK' || empty($reportData['result'])) {
         throw new Exception("Error: No se encontraron datos de facturación para el ID proporcionado.");
+    }
+    $factura = $reportData['result'];
+    $nombre_user = $factura['name_user'] ?? '';
+    $voucher_type_code = $factura['voucher_type_code'] ?? '';
+    $tipo_voucher = ($factura['voucher_type_code'] == '01') ? 'FACTURA ELECTRÓNICA' : 'BOLETA ELECTRÓNICA';
+    $documento_client = $factura['document_type'] ?? '';
+    $tipo_documento_cliente = $factura['document_type_id'] ?? '';
+    $cliente = $factura['client_name'] ?? '';
+    $igv_asig = $factura['total_igv'] ?? 0;
+    $direccioncliente = $factura['client_address'] ?? '';
+    $rucC = $factura['document_number'] ?? '';
+    $serie = $factura['series'] ?? '';
+    $correlativo = $factura['correlative'] ?? '';
+    $moneda = $factura['currency_desc'] ?? '';
+    $fecha = $factura['issue_date'] ?? '';
+    $fecha_ven = $factura['due_date'] ?? '';
+    $total_venta = $factura['total_sale'] ?? 0;
+    $op_gravadas = $factura['taxable_operations'] ?? 0;
+    $op_gratuitas = $factura['free_operations'] ?? 0;
+    $op_exoneradas = $factura['exempt_operations'] ?? 0;
+    $op_inafectas = $factura['unaffected_operations'] ?? 0;
+    $tipo_pago = $factura['payment_type'] ?? '';
+    $leyenda = $factura['legend'] ?? '';
+    $igv_porcentaje = $factura['igv'] ?? 18;
+
+    // Verificar detalles de la factura
+    if (!isset($detailsData) || $detailsData['status'] !== 'OK' || empty($detailsData['result'])) {
+        throw new Exception("Error: No se encontraron detalles para la factura.");
+    }
+    $detalles = $detailsData['result'];
+    $item = 0;
+
+   
+
+    // Función para formatear fechas en español
+    function formatDate($dateString) {
+        if (empty($dateString)) return '';
+        
+        $meses = [
+            'January' => 'Enero', 'February' => 'Febrero', 'March' => 'Marzo',
+            'April' => 'Abril', 'May' => 'Mayo', 'June' => 'Junio',
+            'July' => 'Julio', 'August' => 'Agosto', 'September' => 'Septiembre',
+            'October' => 'Octubre', 'November' => 'Noviembre', 'December' => 'Diciembre'
+        ];
+        
+        $date = new DateTime($dateString);
+        return $date->format('d') . ' de ' . $meses[$date->format('F')] . ' del ' . $date->format('Y');
     }
     ?>
     <form action>
-        <input type="hidden" name="rucempresa">
-        <input type="hidden" name="seriecompro">
-        <input type="hidden" name="correlativocompro">
+        <input type="hidden" name="rucempresa" value="<?= $rucE ?>">
+        <input type="hidden" name="seriecompro" value="<?= $serie ?>">
+        <input type="hidden" name="correlativocompro" value="<?= $correlativo ?>">
     </form>
 
     <div class="header">
         <table style="width: 100%">
             <tr>
-                <th style="width: 55%; text-align: center; ">
-                    <img style="width: 90%;" src="<?= $logo ?>" alt="Logo">
-                    <p class="razon-social"> <?= $empresa; ?></p>
-                </th>
+            <th style="width: 55%; text-align: center; ">
+    <?php
+    $logoPath = "application\Reporte\logo.png"; // Ajusta esta ruta
+    if (file_exists($logoPath) && is_readable($logoPath)) {
+        echo '<img style="width: 90%;" src="'.$logoPath.'" alt="Logo">';
+    } else {
+        echo '<h3>'.$empresa.'</h3>';
+        echo '<p>RUC: '.$rucE.'</p>';
+    }
+    ?>
+    <p class="razon-social"><?= $empresa; ?></p>
+</th>
                 <th style="width: 40%; text-align: center; padding-top: 5px " class="factura">
                     <p>
                         R.U.C. <?= $rucE; ?><br><br>
@@ -338,7 +349,8 @@
             <tr>
                 <td style="width: 55%">
                     Dirección: <?= $direccion; ?> - <?= $distrito; ?> - <?= $provincia; ?><br>
-                    Telef.: <?= $telefono; ?> Email.: <?= $correo; ?><br>
+                    Telef.: <?= $telefono; ?> Email: <?= $correo; ?><br>
+                    Web: <?= $web; ?>
                 </td>
             </tr>
         </table>
@@ -352,7 +364,7 @@
                 <td style="width: 88.3%">: <?= $cliente; ?></td>
             </tr>
             <tr>
-                <td style="width: 10%"><b><?= $Docmuent_client; ?></b></td>
+                <td style="width: 10%"><b><?= $documento_client; ?></b></td>
                 <td style="width: 88.3%">: <?= $rucC; ?></td>
             </tr>
             <tr>
@@ -366,20 +378,13 @@
         <table cellspacing="0" cellpadding="0" border="0.5" class="pagos">
             <tr>
                 <td style="width:24.6%"><b>Fecha de Emisión</b><br>
-                    <?php
-                    $date = new DateTime($fecha);
-                    $formatter = new IntlDateFormatter('es_PE', IntlDateFormatter::LONG, IntlDateFormatter::NONE);
-                    echo $formatter->format($date);
-                    ?>
+                    <?= formatDate($fecha) ?>
                 </td>
                 <td style="width:24.6%"><b>Fecha de Vencimiento</b><br>
-                    <?php
-                    $date_ven = new DateTime($fecha_ven);
-                    echo $formatter->format($date_ven);
-                    ?>
+                    <?= formatDate($fecha_ven) ?>
                 </td>
                 <td style="width:24.6%"><b>Moneda</b><br><?= $moneda; ?> </td>
-                <td style="width:24.6%"><b>Condición de Pago</b><br><?= $codigotipo_pago; ?></td>
+                <td style="width:24.6%"><b>Condición de Pago</b><br><?= $tipo_pago; ?></td>
             </tr>
             <tr>
                 <td style="width:24.6%"><b>Asesor Comercial</b><br><?= $nombre_user ?></td>
@@ -391,7 +396,7 @@
     </div>
     <br>
 
-    <!-- Descrpcion -->
+    <!-- Descripción -->
     <div class="contenido">
         <table class="cabecera">
             <tr>
@@ -422,24 +427,20 @@
 
         <table class="articulo" border="0.3" cellpadding="0" cellspacing="1" bordercolor="black" style="border-collapse:collapse;">
             <?php
-            if (isset($detalles) && is_array($detalles)) {
-                foreach ($detalles as $regd) {
-                    $item += 1;
-                    $estilo = ($item % 2 == 0) ? '#DAF9FB' : '#F0F0F0';
-                    $precioV = ($regd['item_unit_price'] + $regd['tax_amount']) / $regd['quantity'];
-                    $importe = $precioV * $regd['quantity'];
+            foreach ($detalles as $regd) {
+                $item += 1;
+                $estilo = ($item % 2 == 0) ? '#DAF9FB' : '#F0F0F0';
+                $precioV = $regd['item_unit_price'];
+                $importe = $precioV * $regd['quantity'];
             ?>
-                    <tr style="text-align:left">
-                        <td style="background-color: <?= $estilo; ?>; width:9.05%; padding-top: 5px; text-align: center;"><?= $regd['code']; ?></td>
-                        <td style="background-color: <?= $estilo; ?>; width:55%; height: 1.12px; padding-top: 5px; text-align: justify; padding: 5px"><?= $regd['articulo'] . " " . $regd['serie']; ?></td>
-                        <td style="background-color: <?= $estilo; ?>; width:10%; padding-top: 5px; text-align: center;"><?= $regd['quantity']; ?></td>
-                        <td style="background-color: <?= $estilo; ?>; width:13%; padding-top: 5px; text-align: right;"><?= number_format($precioV, 2, '.', ','); ?>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-                        <td style="background-color: <?= $estilo; ?>; width:13%; padding-top: 5px; text-align: right;"><?= number_format($importe, 2, '.', ','); ?>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-                    </tr>
-            <?php }
-            } else {
-                echo "<h1>Error: No se encontraron detalles para el ID proporcionado.</h1>";
-            } ?>
+                <tr style="text-align:left">
+                    <td style="background-color: <?= $estilo; ?>; width:9.05%; padding-top: 5px; text-align: center;"><?= $regd['product_code']; ?></td>
+                    <td style="background-color: <?= $estilo; ?>; width:55%; height: 1.12px; padding-top: 5px; text-align: justify; padding: 5px"><?= $regd['product_description'] . " " . ($regd['series'] ?? ''); ?></td>
+                    <td style="background-color: <?= $estilo; ?>; width:10%; padding-top: 5px; text-align: center;"><?= $regd['quantity']; ?></td>
+                    <td style="background-color: <?= $estilo; ?>; width:13%; padding-top: 5px; text-align: right;"><?= number_format($precioV, 2, '.', ','); ?>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                    <td style="background-color: <?= $estilo; ?>; width:13%; padding-top: 5px; text-align: right;"><?= number_format($importe, 2, '.', ','); ?>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                </tr>
+            <?php } ?>
             <br>
         </table>
     </div>
@@ -452,8 +453,8 @@
                 <td style="text-align: center; width:12%">OP. GRATUITA</td>
                 <td style="text-align: center; width:12%">OP. EXONERADA</td>
                 <td style="text-align: center; width:12%">OP. INAFECTA</td>
-                <td style="text-align: center; width:12%">DESCTO TOTAL </td>
-                <td style="text-align: center; width:12%">IGV (18%)</td>
+                <td style="text-align: center; width:12%">DESCTO TOTAL</td>
+                <td style="text-align: center; width:12%">IGV (<?= $igv_porcentaje ?>%)</td>
                 <td style="text-align: center; width:12%">PRECIO TOTAL</td>
             </tr>
             <tr style="width: 100%; text-align: center;">
@@ -461,7 +462,7 @@
                 <td style="width:12%">S/ &nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($op_gratuitas, 2, '.', ','); ?></td>
                 <td style="width:12%">S/ &nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($op_exoneradas, 2, '.', ','); ?></td>
                 <td style="width:12%">S/ &nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($op_inafectas, 2, '.', ','); ?></td>
-                <td style="width:12%">S/ &nbsp;&nbsp;&nbsp;&nbsp; 00.00</td>
+                <td style="width:12%">S/ &nbsp;&nbsp;&nbsp;&nbsp; <?= number_format(($regd['discount'] ?? 0), 2, '.', ','); ?></td>
                 <td style="width:12%">S/ &nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($igv_asig, 2, '.', ','); ?></td>
                 <td style="width:12%">S/ &nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($total_venta, 2, '.', ','); ?></td>
             </tr>
@@ -469,7 +470,7 @@
         <br>
         <table style="border: solid 0.2px black; ">
             <tr>
-                <td style=" width:84%; height: 10px;">SON:<?= $leyenda ?></td>
+                <td style=" width:84%; height: 10px;">SON: <?= number_format($total_venta) ?></td>
             </tr>
         </table>
     </div>
@@ -481,35 +482,30 @@
                     <td style="width: 90%; padding-top: 5px">
                         ¡¡¡ GRACIAS POR SU COMPRA VUELVA PRONTO !!! <br>
                         _____________________________________________________________________________________________________________<br><br>
-                        Representación impresa de la FACTURA ELECTRONICA<br>
+                        Representación impresa de la <?= $tipo_voucher ?><br>
                         Emitida del sistema del contribuyente autorizado con fecha
                         <b>
-                            <?php
-                            $date_inicio = new DateTime($fecha_inicio);
-                            $formatter = new IntlDateFormatter('es_PE', IntlDateFormatter::LONG, IntlDateFormatter::NONE);
-                            echo $formatter->format($date_inicio); // Formato de 24 horas
-                            ?>
+                            <?= formatDate($fecha_inicio) ?>
                         </b><br>
                         Puede consultar su comprobante electrónico utilizando su clave SOL, en la plataforma de SUNAT. <?= $web; ?>
-                    </td>
-                    <td style=" width: 10%; text-align: center;">
-                        <?php
-                        include_once "vendor/phpqrcode/qrlib.php";
-                        $tamaño = 2;
-                        $level = 'Q';
-                        $framSize = 1;
-                        $contenido = $rucE . '|' .  $codeVoucher . '|' . $serie . '|' . $correlativo . '|' . $igv_asig . '|' . $total_venta . '|' . $fecha . '|' . $tipo_documento_cliente . '|' . $rucC . '|';
-                        ob_start();
-                        QRcode::png($contenido, null, $level, $tamaño, $framSize);
-                        $imageString = base64_encode(ob_get_contents());
-                        ob_end_clean();
-                        echo '<img src="data:image/png;base64,' . $imageString . '" />';
-                        ?>
-                    </td>
+                        </td>
+                        <td style=" width: 10%; text-align: center;">
+                            <?php
+                            include_once "vendor/phpqrcode/qrlib.php";
+                            $tamaño = 2;
+                            $level = 'Q';
+                            $framSize = 1;
+                            $contenido = $rucE . '|' .  $codeVoucher . '|' . $serie . '|' . $correlativo . '|' . $igv_asig . '|' . $total_venta . '|' . $fecha . '|' . $tipo_documento_cliente . '|' . $rucC . '|';
+                            ob_start();
+                            QRcode::png($contenido, null, $level, $tamaño, $framSize);
+                            $imageString = base64_encode(ob_get_contents());
+                            ob_end_clean();
+                            echo '<img src="data:image/png;base64,' . $imageString . '" />';
+                            ?>
+                        </td>
                 </tr>
             </table>
         </div>
     </page_footer>
 </body>
-
 </html>

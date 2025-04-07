@@ -18,7 +18,7 @@ class M_Igvinvoicing extends Model
                 i.voucher_type_code,
                 i.series,
                 i.correlative,
-                i.date_time AS issue_date,
+                i.date_time,
                 i.due_date,
                 i.currency,
                 i.payment_type_code,
@@ -108,17 +108,15 @@ class M_Igvinvoicing extends Model
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($result) {
-                $response = array('status' => 'OK', 'result' => $result);
+                return ['status' => 'OK', 'result' => $result];
             } else {
-                $response = array('status' => 'ERROR', 'result' => array());
+                return ['status' => 'ERROR', 'result' => []];
             }
         } catch (PDOException $e) {
-            $response = array('status' => 'EXCEPTION', 'result' => $e->getMessage());
+            return ['status' => 'EXCEPTION', 'result' => $e->getMessage()];
         }
-        return $response;
     }
 
-    // Obtener detalles de factura
     public function get_igvinvoicing_details($invoice_id)
     {
         try {
@@ -144,40 +142,13 @@ class M_Igvinvoicing extends Model
             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             if ($result) {
-                $response = array('status' => 'OK', 'result' => $result);
+                return ['status' => 'OK', 'result' => $result];
             } else {
-                $response = array('status' => 'ERROR', 'result' => array());
+                return ['status' => 'ERROR', 'result' => []];
             }
         } catch (PDOException $e) {
-            $response = array('status' => 'EXCEPTION', 'result' => $e->getMessage());
+            return ['status' => 'EXCEPTION', 'result' => $e->getMessage()];
         }
-        return $response;
-    }
-
-    // Actualizar estado de la factura
-    public function update_igvinvoicing_status($invoice_id, $status, $sunat_response)
-    {
-        try {
-            $sql = 'UPDATE igvinvoice 
-                    SET status = :status,
-                        sunat_response_description = :sunat_response
-                    WHERE invoice_id = :invoice_id';
-            
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->bindParam(':invoice_id', $invoice_id, PDO::PARAM_INT);
-            $stmt->bindParam(':status', $status, PDO::PARAM_STR);
-            $stmt->bindParam(':sunat_response', $sunat_response, PDO::PARAM_STR);
-            $result = $stmt->execute();
-            
-            if ($result) {
-                $response = array('status' => 'OK', 'result' => array());
-            } else {
-                $response = array('status' => 'ERROR', 'result' => array());
-            }
-        } catch (PDOException $e) {
-            $response = array('status' => 'EXCEPTION', 'result' => $e);
-        }
-        return $response;
     }
 
     // Obtener información de contacto del cliente

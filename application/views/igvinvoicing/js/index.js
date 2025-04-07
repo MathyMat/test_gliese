@@ -59,29 +59,9 @@ function load_datatable() {
             {
                 data: 'status',
                 width: '60px',
-                render: function (data, type, row, meta) {
-                    if (row.status == "1") {
-                        return `<div class="d-inline-flex align-items-center">
-                                    <span class="badge rounded-pill badge-light-warning">Pendiente</span>
-                                    <i class="fa fa-info-circle ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Registrado en el sistema"></i>
-                                </div>`;
-                    } else if (row.status == "2") {
-                        return `<div class="d-inline-flex align-items-center">
-                                    <span class="badge rounded-pill badge-light-success">Aceptado</span>
-                                    <i class="fa fa-info-circle ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="${row.sunat_response_description || 'Sin observaciones'}"></i>
-                                </div>`;
-                    } else if (row.status == "3") {
-                        return `<div class="d-inline-flex align-items-center">
-                                    <span class="badge rounded-pill badge-light-danger">Rechazado</span>
-                                    <i class="fa fa-info-circle ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="${row.sunat_response_description || 'Sin detalles'}"></i>
-                                </div>`;
-                    } else if (row.status == "4") {
-                        return `<div class="d-inline-flex align-items-center">
-                                    <span class="badge rounded-pill badge-light-warning">Observado</span>
-                                    <i class="fa fa-info-circle ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="${row.sunat_response_description || 'Sin observaciones'}"></i>
-                                </div>`;
-                    }
-                }
+                
+                
+        
             },
             {
                 class: 'center',

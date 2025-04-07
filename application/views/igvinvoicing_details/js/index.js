@@ -689,36 +689,44 @@ function calcularTotales() {
   let subtotal = 0;
   let igv = 0;
   let total = 0;
+  let igv_percentage = parseFloat($("input[name='igv_asig']").val()) || 18;
 
   // Recorre los productos para calcular el subtotal
-  $(".filas").each(function () {
-    let precio = parseFloat($(this).find("input[name='sale_price[]']").val());
-    let cantidad = parseFloat($(this).find("input[name='quantity[]']").val());
-    subtotal += precio * cantidad;
+  $(".filas").each(function() {
+    let precio = parseFloat($(this).find("input[name='sale_price[]']").val()) || 0;
+    let cantidad = parseFloat($(this).find("input[name='quantity[]']").val()) || 0;
+    subtotal += (precio * cantidad) / (1 + igv_percentage/100);
   });
 
   // Calcula el IGV y el total
-  igv = subtotal * 0.18; // Suponiendo un IGV del 18%
-  total = subtotal;
+  igv = subtotal * (igv_percentage/100);
+  total = subtotal + igv;
 
   // Asigna los valores a los campos
-  $("#op_gravadas").val(subtotal.toFixed(2));
-  $("#igv_total").val(igv.toFixed(2));
-  $("#total_venta").val(total.toFixed(2));
+  $("input[name='op_gravadas']").val(subtotal.toFixed(2));
+  $("input[name='igv_total']").val(igv.toFixed(2));
+  $("input[name='total_venta']").val(total.toFixed(2));
+  
+  return {
+    subtotal: subtotal.toFixed(2),
+    igv: igv.toFixed(2),
+    total: total.toFixed(2)
+  };
 }
-
-$("#create_income_details_form").on("submit", function (e) {
+$("#create_income_details_form").on("submit", function(e) {
   e.preventDefault();
 
-  // Validar cliente y calcular totales (tu código actual)
+  // Validar cliente
   var clientId = $("select[name='business_name_cli']").val();
   if (!clientId) {
     alert("Por favor seleccione un cliente");
     return false;
   }
-  calcularTotales();
+  
+  // Calcular totales y obtener los valores
+  var totales = calcularTotales();
 
-  // Crear objeto con los datos (no FormData)
+  // Crear objeto con los datos
   var data = {
     business_name_cli: clientId,
     fecha_emision: $("input[name='fecha_emision']").val(),
@@ -732,72 +740,65 @@ $("#create_income_details_form").on("submit", function (e) {
     vt_description: $("select[name='vt_description']").val(),
     pt_description: $("select[name='pt_description']").val(),
     id_user: clientId,
-    op_gravadas: $("input[name='op_gravadas']").val(),
-    igv_total: $("input[name='igv_total']").val(),
-    total_venta: $("input[name='total_venta']").val(),
-    product_code: $("input[name='product_code[]']")
-      .map(function () {
-        return $(this).val();
-      })
-      .get(),
-    product_description: $("input[name='product_description[]']")
-      .map(function () {
-        return $(this).val();
-      })
-      .get(),
-    unit_of_measure: $("input[name='unit_of_measure[]']")
-      .map(function () {
-        return $(this).val();
-      })
-      .get(),
-    sale_price: $("input[name='sale_price[]']")
-      .map(function () {
-        return $(this).val();
-      })
-      .get(),
-    quantity: $("input[name='quantity[]']")
-      .map(function () {
-        return $(this).val();
-      })
-      .get(),
+    op_gravadas: totales.subtotal,  // Usar los valores calculados
+    igv_total: totales.igv,         // Usar los valores calculados
+    total_venta: totales.total,     // Usar los valores calculados
+    product_code: $("input[name='product_code[]']").map(function() {
+      return $(this).val();
+    }).get(),
+    product_description: $("input[name='product_description[]']").map(function() {
+      return $(this).val();
+    }).get(),
+    unit_of_measure: $("input[name='unit_of_measure[]']").map(function() {
+      return $(this).val();
+    }).get(),
+    sale_price: $("input[name='sale_price[]']").map(function() {
+      return $(this).val();
+    }).get(),
+    quantity: $("input[name='quantity[]']").map(function() {
+      return $(this).val();
+    }).get()
   };
 
   // Enviar como JSON
   $.ajax({
-    url: BASE_URL + "Igvinvoicing_Details/save_invoice", // Verifica la ruta
+    url: BASE_URL + "Igvinvoicing_Details/save_invoice",
     type: "POST",
     data: JSON.stringify(data),
     contentType: "application/json",
     dataType: "json",
-    beforeSend: function () {
-      $("#btnGuardar").prop("disabled", true);
+    beforeSend: function() {
+        $("#btnGuardar").prop("disabled", true);
     },
-    success: function (response) {
-      if (response && response.status === "OK") {
-        alert("Éxito: " + (response.message || "Operación completada"));
-        console.log("Datos:", response.data);
-      } else {
-        alert("Error: " + (response?.message || "Respuesta inválida"));
-      }
+    success: function(response) {
+        if (response && response.status === "OK") {
+            // Mostrar mensaje de éxito
+            alert("Éxito: " + (response.message || "Factura creada correctamente"));
+           
+              // Opción 1: Redirigir a URL específica (RECOMENDADO)
+            window.location.href = BASE_URL + "Igvinvoicing";
+        } else {
+            alert("Error: " + (response?.message || "Respuesta inválida"));
+        }
     },
-    error: function (xhr) {
-      let errorMsg = "Error: ";
-      try {
-        const jsonResponse = JSON.parse(xhr.responseText);
-        errorMsg += jsonResponse.message || xhr.statusText;
-      } catch (e) {
-        errorMsg += "Servidor devolvió: " + xhr.responseText.substring(0, 100);
-      }
-      console.error("Detalles:", {
-        status: xhr.status,
-        response: xhr.responseText,
-      });
-      alert(errorMsg);
+    error: function(xhr) {
+        let errorMsg = "Error: ";
+        try {
+            const jsonResponse = JSON.parse(xhr.responseText);
+            errorMsg += jsonResponse.message || xhr.statusText;
+        } catch (e) {
+            errorMsg += "Servidor devolvió: " + xhr.responseText.substring(0, 100);
+        }
+        console.error("Detalles:", {
+            status: xhr.status,
+            response: xhr.responseText
+        });
+        alert(errorMsg);
     },
-    complete: function () {
-      $("#btnGuardar").prop("disabled", false);
-    },
-  });
+    complete: function() {
+        $("#btnGuardar").prop("disabled", false);
+    }
+});
 });
 
 // Función para formatear números con comas
