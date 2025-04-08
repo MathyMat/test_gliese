@@ -1,5 +1,8 @@
 <!-- BEGIN: Content-->
+
 <div class="app-content content">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <div class="content-overlay"></div>
   <div class="header-navbar-shadow"></div>
   <div class="content-wrapper container-xxl p-0">
@@ -94,55 +97,59 @@
 
 
               <!-- Table -->
-              <div class="form-group col-lg-7 col-md-7 col-sm-7 col-xs-12">
+              <div class="form-group col-lg-7 col-md-7 col-sm-7 col-xs-12 ">
                 <a data-toggle="modal" href="#myModal">
                   <button id="btnAgregarArt" type="button" class="btn btn-primary" onclick="agregarDetalle()"> <span
                       class="fa fa-plus"></span>&nbsp;&nbsp;Agregar Servicio</button>
                 </a>
               </div>
+              <!-- Table -->
+              <div class="row table-responsive mt-2">
+                <div class="col-12">
+                  <div class="card">
+                    <table id="detalles" class=" table">
+                      <thead>
+                        <tr>
+                          <th>Opciones</th>
+                          <th>Codigo</th>
+                          <th>Servicio</th>
+                          <th>U. Medida</th>
+                          <th>Precio</th>
+                          <th>Cantidad</th>
+                          <th>Sub total</th>
+                          <th>IGV</th>
+                          <th>Importe</th>
+                        </tr>
+                      </thead>
+                      <tfoot>
+                        <tr>
+                          <th colspan="6"></th>
+                          <th colspan="2">SUBTOTAL</th>
+                          <th>
+                            <h4 id="totalg">0.00</h4><input type="hidden" name="op_gravadas" id="op_gravadas">
+                          </th>
+                        </tr>
 
-              <div class="col-lg-12 col-sm-12 col-md-12 col-xs-12 table-responsive ">
-                <table id="detalles" class="table table-striped table-bordered table-condensed table-hover">
-                  <thead style="background-color:#A9D0F5">
-                    <th>Opciones</th>
-                    <th style="width:90px;">Codigo</th>
-                    <th>Servicio</th>
-                    <th>U. Medida</th>
-                    <th>Precio</th>
-                    <th>Cantidad</th>
-                    <th>Sub total</th>
-                    <th>IGV</th>
-                    <th>Importe</th>
-                  </thead>
-                  <tfoot>
-                    <tr>
-                      <th colspan="6"></th>
-                      <th colspan="2">SUBTOTAL</th>
-                      <th>
-                        <h4 id="totalg">0.00</h4><input type="hidden" name="op_gravadas" id="op_gravadas">
-                      </th>
-                    </tr>
-
-                    <tr>
-                      <th style="height:2px;" colspan="6"></th>
-                      <th colspan="2">IGV</th>
-                      <th>
-                        <h4 id="totaligv">0.00</h4><input type="hidden" name="igv_total" id="igv_total">
-                      </th>
-                    </tr>
-                    <tr>
-                      <th style="height:2px;" colspan="6"></th>
-                      <th style="height:2px;" colspan="2">TOTAL</th>
-                      <th style="height:2px;">
-                        <h4 id="totalventa">0.00</h4><input type="hidden" name="total_venta" id="total_venta">
-                      </th>
-                    </tr>
-                  </tfoot>
-
-                  <tbody>
-
-                  </tbody>
-                </table>
+                        <tr>
+                          <th style="height:2px;" colspan="6"></th>
+                          <th colspan="2">IGV</th>
+                          <th>
+                            <h4 id="totaligv">0.00</h4><input type="hidden" name="igv_total" id="igv_total">
+                          </th>
+                        </tr>
+                        <tr>
+                          <th style="height:2px;" colspan="6"></th>
+                          <th style="height:2px;" colspan="2">TOTAL</th>
+                          <th style="height:2px;">
+                            <h4 id="totalventa">0.00</h4><input type="hidden" name="total_venta" id="total_venta">
+                          </th>
+                        </tr>
+                      </tfoot>
+                      <tbody>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
 
               <div class="form-group col-lg-12 col-md-12 col-sm-12 col-xs-12">
