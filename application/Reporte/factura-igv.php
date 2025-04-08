@@ -263,6 +263,7 @@
     }
     $factura = $reportData['result'];
     $nombre_user = $factura['name_user'] ?? '';
+    $codeVoucher = $regc['product_code'] ?? '';
     $voucher_type_code = $factura['voucher_type_code'] ?? '';
     $tipo_voucher = ($factura['voucher_type_code'] == '01') ? 'FACTURA ELECTRÓNICA' : 'BOLETA ELECTRÓNICA';
     $documento_client = $factura['document_type'] ?? '';
@@ -292,8 +293,6 @@
     $detalles = $detailsData['result'];
     $item = 0;
 
-   
-
     // Función para formatear fechas en español
     function formatDate($dateString) {
         if (empty($dateString)) return '';
@@ -318,18 +317,18 @@
     <div class="header">
         <table style="width: 100%">
             <tr>
-            <th style="width: 55%; text-align: center; ">
-    <?php
-    $logoPath = "application\Reporte\logo.png"; // Ajusta esta ruta
-    if (file_exists($logoPath) && is_readable($logoPath)) {
-        echo '<img style="width: 90%;" src="'.$logoPath.'" alt="Logo">';
-    } else {
-        echo '<h3>'.$empresa.'</h3>';
-        echo '<p>RUC: '.$rucE.'</p>';
-    }
-    ?>
-    <p class="razon-social"><?= $empresa; ?></p>
-</th>
+                <th style="width: 55%; text-align: center; ">
+                    <?php
+                    $logoPath = "application\Reporte\logo.png"; // Ajusta esta ruta
+                    if (file_exists($logoPath)) {
+                        echo '<img style="width: 90%;" src="'.$logoPath.'" alt="Logo">';
+                    } else {
+                        echo '<h3>'.$empresa.'</h3>';
+                        echo '<p>RUC: '.$rucE.'</p>';
+                    }
+                    ?>
+                    <p class="razon-social"><?= $empresa; ?></p>
+                </th>
                 <th style="width: 40%; text-align: center; padding-top: 5px " class="factura">
                     <p>
                         R.U.C. <?= $rucE; ?><br><br>
@@ -470,42 +469,77 @@
         <br>
         <table style="border: solid 0.2px black; ">
             <tr>
-                <td style=" width:84%; height: 10px;">SON: <?= number_format($total_venta) ?></td>
+                <td style=" width:84%; height: 10px;">SON: <?= $leyenda ?></td>
             </tr>
         </table>
     </div>
 
     <page_footer><br><br>
-        <div class="foot"><br><br>
-            <table cellspacing="0" cellpadding="0" border="0.2">
-                <tr class="cuadro-footer">
-                    <td style="width: 90%; padding-top: 5px">
-                        ¡¡¡ GRACIAS POR SU COMPRA VUELVA PRONTO !!! <br>
-                        _____________________________________________________________________________________________________________<br><br>
-                        Representación impresa de la <?= $tipo_voucher ?><br>
-                        Emitida del sistema del contribuyente autorizado con fecha
-                        <b>
-                            <?= formatDate($fecha_inicio) ?>
-                        </b><br>
-                        Puede consultar su comprobante electrónico utilizando su clave SOL, en la plataforma de SUNAT. <?= $web; ?>
-                        </td>
-                        <td style=" width: 10%; text-align: center;">
-                            <?php
-                            include_once "vendor/phpqrcode/qrlib.php";
-                            $tamaño = 2;
-                            $level = 'Q';
-                            $framSize = 1;
-                            $contenido = $rucE . '|' .  $codeVoucher . '|' . $serie . '|' . $correlativo . '|' . $igv_asig . '|' . $total_venta . '|' . $fecha . '|' . $tipo_documento_cliente . '|' . $rucC . '|';
-                            ob_start();
-                            QRcode::png($contenido, null, $level, $tamaño, $framSize);
-                            $imageString = base64_encode(ob_get_contents());
-                            ob_end_clean();
-                            echo '<img src="data:image/png;base64,' . $imageString . '" />';
-                            ?>
-                        </td>
-                </tr>
-            </table>
-        </div>
-    </page_footer>
+    <div class="foot"><br><br>
+        <table cellspacing="0" cellpadding="0" border="0.2">
+            <tr class="cuadro-footer">
+                <td style="width: 80%; padding-top: 5px">
+                    ¡¡¡ GRACIAS POR SU COMPRA VUELVA PRONTO !!! <br>
+                    _____________________________________________________________________________________________________________<br><br>
+                    Representación impresa de la <?= $tipo_voucher ?><br>
+                    Emitida del sistema del contribuyente autorizado con fecha
+                    <b>
+                        <?= formatDate($fecha_inicio) ?>
+                    </b><br>
+                    Puede consultar su comprobante electrónico utilizando su clave SOL, en la plataforma de SUNAT. <?= $web; ?>
+                </td>
+                <td style="width: 5%; text-align: center;">
+                    <?php
+                    include_once "vendor/phpqrcode/qrlib.php";
+                    
+                    // Verificar que todos los datos necesarios estén presentes
+                    if (!empty($rucE) && !empty($voucher_type_code) && !empty($serie) && 
+                        !empty($correlativo) && !empty($total_venta) && !empty($fecha) && 
+                        !empty($tipo_documento_cliente) && !empty($rucC)) {
+                        
+                        // Formatear fecha y montos
+                        $fecha_qr = date('Y-m-d', strtotime($fecha));
+                        $total_qr = number_format($total_venta, 2, '.', '');
+                        $igv_qr = number_format($igv_asig, 2, '.', '');
+                        
+                        // Crear contenido del QR
+                        $qr_content = implode('|', [
+                            $rucE,
+                            $voucher_type_code,
+                            $serie,
+                            $correlativo,
+                            $igv_qr,
+                            $total_qr,
+                            $fecha_qr,
+                            $tipo_documento_cliente,
+                            $rucC
+                        ]);
+                        
+                        // Ruta temporal para guardar el QR
+                        $tempDir = sys_get_temp_dir() . '/';
+                        $fileName = 'qr_' . md5($qr_content) . '.png';
+                        $filePath = $tempDir . $fileName;
+                        
+                        // Generar el QR y guardarlo temporalmente
+                        QRcode::png($qr_content, $filePath, QR_ECLEVEL_H, 5, 2);
+                        
+                        // Verificar que el archivo se creó
+                        if (file_exists($filePath)) {
+                            // Mostrar la imagen del QR
+                            echo '<img src="data:image/png;base64,' . base64_encode(file_get_contents($filePath)) . '" />';
+                            // Eliminar el archivo temporal
+                            unlink($filePath);
+                        } else {
+                            echo '<span style="color:red;">Error al generar QR</span>';
+                        }
+                    } else {
+                        echo '<span style="color:red;">Faltan datos para generar QR</span>';
+                    }
+                    ?>
+                </td>
+            </tr>
+        </table>
+    </div>
+</page_footer>
 </body>
 </html>

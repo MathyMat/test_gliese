@@ -149,8 +149,9 @@
                 <button class="btn btn-primary" type="submit" id="btnGuardar"><i class="fa fa-save"></i>&nbsp;&nbsp;
                   Guardar</button>
 
-                <button id="btnCancelar" class="btn btn-danger" onclick="cancelarform()" type="button"><i
+                <button id="btnCancelar" class="btn btn-danger" onclick="window.location.href='Igvinvoicing/index.php'" type="button"><i
                     class="fa fa-arrow-circle-left"></i> &nbsp;&nbsp;Cancelar</button>
+                    
               </div>
             </form>
           </div>
